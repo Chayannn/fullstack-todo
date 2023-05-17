@@ -1,19 +1,22 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import { server } from '../main';
+import { Context, Server } from '../main';
 import { toast } from 'react-hot-toast';
 
 function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { isAuthenticated, setIsAuthenticated, loading, setLoading } =
+    useContext(Context);
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const { data } = await axios.post(
-        `${server}/users/new`,
+        `${Server}/users/new`,
         {
           name,
           email,
@@ -27,11 +30,15 @@ function Register() {
         }
       );
       toast.success(data.message);
+      setIsAuthenticated(true);
+      setLoading(false);
     } catch (error) {
-      toast.error('Some error');
-      console.log(error);
+      toast.error(error.response.data.message);
+      setIsAuthenticated(false);
+      setLoading(false);
     }
   };
+  if (isAuthenticated) return <Navigate to={'/'} />;
 
   return (
     <div className="login">
@@ -49,6 +56,7 @@ function Register() {
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             placeholder="email"
+            autoComplete="username"
             required
           />
           <input
@@ -56,9 +64,12 @@ function Register() {
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             placeholder="password"
+            autoComplete="current-password"
             required
           />
-          <button type="submit">Sign Up</button>
+          <button type="submit" disabled={loading}>
+            Sign Up
+          </button>
           <h4>Or</h4>
           <Link to="/login">Login</Link>
         </form>
